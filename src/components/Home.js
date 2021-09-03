@@ -1,57 +1,85 @@
-import React,{ Fragment, useEffect } from 'react'
+import React, { Fragment, useEffect,useState } from 'react'
 
 import MetaData from './layout/MetaData'
+import Product from './product/Product'
+import Loader from './layout/Loader';
 
 import { useDispatch, useSelector } from 'react-redux'
-import {getProducts} from '../actions/productActions'
+import { useAlert } from 'react-alert';
+import { getProducts } from '../actions/productActions'
+import Pagination from 'react-js-pagination'
 
-const Home = () => {
+const Home = ({match}) => {
 
+const [currentPage,setCurrentPage] = useState(1)
+
+
+  const alert = useAlert();
   const dispatch = useDispatch();
 
-  const {loading,products,error,productsCount} = useSelector(state => state.products)
+  
+  const {loading,products,error,productsCount,resPerPage} = useSelector(state => state.products)
+
+ const keyword = match.params.keyword
 
   useEffect(() => {
-  dispatch(getProducts())
-},[dispatch])
 
+     if (error) {
+    return alert.error(error)
+  }
+
+    dispatch(getProducts(keyword,currentPage))
+    
+   
+
+},[dispatch,alert,error,keyword,currentPage])
+
+    function setCurrentPageNo(pageNumber) {
+        setCurrentPage(pageNumber)
+    }
+
+
+  
   return (
     <Fragment>
-
-      <MetaData title={'Buy Best Products Online'} />
+      {loading ? <Loader /> : (
+        <Fragment>
+<MetaData title={'Buy Best Products Online'} />
 
        <h1 id="products_heading">Latest Products</h1>
 
     <section id="products" className="container mt-5">
         <div className="row">
           {products && products.map(product => (
-              <div id={product._id} className="col-sm-12 col-md-6 col-lg-3 my-3">
-          <div className="card p-3 rounded">
-            <img alt="product"
-              className="card-img-top mx-auto"
-              src={product.images[0].url}
-            />
-            <div className="card-body d-flex flex-column">
-              <h5 className="card-title">
-                    <a href="#">{product.name }</a>
-              </h5>
-              <div className="ratings mt-auto">
-                <div className="rating-outer">
-                  <div className="rating-inner"></div>
-                </div>
-                    <span id="no_of_reviews">({product.nameOfReviews })</span>
-              </div>
-                  <p className="card-text">${product.price }</p>
-              <a href="#" id="view_btn" className="btn btn-block">View Details</a>
-            </div>
-          </div>
-        </div>
+            <Product key={product.id} product={product }/>
             
           ))}
-      
 
       </div>
     </section>
+          {resPerPage <= productsCount && (
+                        <div className="d-flex justify-content-center mt-5">
+                            <Pagination
+                                activePage={currentPage}
+                                itemsCountPerPage={resPerPage}
+                                totalItemsCount={productsCount}
+                                onChange={setCurrentPageNo}
+                                nextPageText={'Next'}
+                                prevPageText={'Prev'}
+                                firstPageText={'First'}
+                                lastPageText={'Last'}
+                                itemClass="page-item"
+                                linkClass="page-link"
+                            />
+                        </div>
+                    )}
+
+
+          </Fragment>
+      )
+      
+      }
+      
 </Fragment>
   )
 }
